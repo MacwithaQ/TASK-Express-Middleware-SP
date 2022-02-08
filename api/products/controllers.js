@@ -1,5 +1,19 @@
 const Product = require("../../models/Product");
 
+exports.fetchProduct = async (productId, next) => {
+  try {
+    const product = await Product.findById(productId);
+    if (product) return product;
+    else {
+      const err = new Error("Product Not Found");
+      err.status = 404;
+      next(err);
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.find();
@@ -19,17 +33,9 @@ exports.productCreate = async (req, res, next) => {
 };
 exports.productDelete = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    const foundProduct = await Product.findById(productId);
-    if (foundProduct) {
-      foundProduct.remove();
-      return res.status(204).end();
-    } else {
-      res.status(404).json({ message: "Product not found" });
-      const err = new Error("Product Not Found");
-      err.status = 404;
-      next(err);
-    }
+    const productId = req.product._id;
+    await Product.findByIdAndDelete({ _id: productId });
+    return res.status(204).end();
   } catch (error) {
     next(error);
   }
@@ -37,19 +43,15 @@ exports.productDelete = async (req, res, next) => {
 
 exports.productUpdate = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    let foundProduct = await Product.findById(productId);
-    if (foundProduct) {
-      foundProduct = await Product.findByIdAndUpdate(productId, req.body, {
+    const productId = req.product._id;
+    const product = await Product.findByIdAndUpdate(
+      { _id: productId },
+      req.body,
+      {
         new: true,
-      });
-      return res.json(foundProduct);
-    } else {
-      res.status(404).json({ message: "Product not found" });
-      const err = new Error("Product Not Found");
-      err.status = 404;
-      next(err);
-    }
+      }
+    );
+    res.status(200).json(product);
   } catch (error) {
     next(error);
   }
